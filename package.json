@@ -1,0 +1,24 @@
+{
+  "name": "tilemerge",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon tileMerge.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "tileMerge",
+    "overlayTile"
+  ],
+  "author": "Ariel44r",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^1.12.7"
+  },
+  "dependencies": {
+    "randomstring": "^1.1.5",
+    "sharp": "^0.18.4",
+    "sqlite3": "^3.1.13"
+  }
+}
