@@ -32,15 +32,18 @@ exports.overlayTest = function(path1, path2, callback) {
 }
 
 exports.overlay = function(path1, path2, id, callback) {
+  var oldPath = `testOverlay2/${id}_${path.basename(path1)}`;
   fs.exists(path1, (exists) => {
     if (exists) {
       fs.exists(path2, (exists) => {
           if (exists == true) {
             sharp(path1)
             .overlayWith(path2, { gravity: sharp.gravity.southeast } )
-            .toFile(`testOverlay2/${id}_${path.basename(path1)}`, (err => {
+            .toFile(oldPath, (err => {
               if(err == null){
-                callback(`testOverlay2/${id}_${path.basename(path1)}`, id);
+                unlinkFile(path1);
+                unlinkFile(path2);
+                callback(oldPath, id);
               } else {
                 console.log(err);
               }
@@ -57,4 +60,12 @@ exports.overlay = function(path1, path2, id, callback) {
       rl.prompt();
     }
   });
+}
+
+function unlinkFile(unlinkPath){
+  if(fs.existsSync(unlinkPath)){
+    fs.unlinkSync(unlinkPath);
+  } else {
+    console.log(`\nunlinkFile: '${unlinkPath}' not exists!\n`);
+  }
 }

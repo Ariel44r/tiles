@@ -165,10 +165,13 @@ function repeatT(){
   sqlite.query(query, (resp) => {
     console.log(resp.length);
     sqlObjectsRepeat = resp;
-    for(var i=0;i<sqlObjectsRepeat.length;i++){
-      getRepeatSQLObjects(sqlObjectsRepeat[i]);
-    }
-    insertSecondDB();
+    var query2 = 'select *, count(*) from pathTiles group by file_name, level_zoom, dir_1 having count(*) > 1;';
+    sqlite.query(query2, (resp2) => {
+      for(var i=0;i<resp2.length;i++){
+        getRepeatSQLObjects(resp2[i]);
+      }
+      insertSecondDB();
+    });
     rl.prompt();
   });
 }
@@ -177,6 +180,7 @@ function getRepeatSQLObjects(sqlObject){
   sqlite.randomStringVal((rndmString) =>{
     sqlObject.repeat = rndmString;
     for(var i=0;i<sqlObjectsRepeat.length;i++){
+      //console.log(`${sqlObjectsRepeat[i].file_name} ${sqlObjectsRepeat[i].repeat}`);
       if(sqlObject != sqlObjectsRepeat[i] && sqlObject.level_zoom == sqlObjectsRepeat[i].level_zoom && sqlObject.dir_1 == sqlObjectsRepeat[i].dir_1 && sqlObject.file_name == sqlObjectsRepeat[i].file_name){
         sqlObjectsRepeat[i].repeat = rndmString;
         sqlRepeat.push(sqlObjectsRepeat[i]);
@@ -223,6 +227,7 @@ function getRepeatPathsF(){
 }
 
 function getRepeatPathsT(){
+  var tilesMerged = [];
   const queryRepeatPaths = 'select *, rowid from pathTilesRepeat;';
   sqlite.query(queryRepeatPaths, (rowsRepeat) => {
     sqlObjectsRepeat = rowsRepeat;
@@ -237,7 +242,7 @@ function getRepeatPathsT(){
                 var pathArray = [oldPath, pathsRepeat[0], pathRepeat];
                 renameFile(pathArray, (isMerged) => {
                   if(isMerged){
-                    console.log(`writeFile: success!`);
+                    console.log('writeFile: success!');
                   }
                 });
               }
@@ -267,7 +272,7 @@ function unlinkFile(unlinkPath){
   if(fs.existsSync(unlinkPath)){
     fs.unlinkSync(unlinkPath);
   } else {
-    console.log(`\nunlinkFile: '${unlinkPath}' not exists!\n`);
+    console.log(`\nunlinkFile: ${unlinkPath} not exists!\n`);
   }
 }
 
@@ -305,17 +310,17 @@ function renameFile(pathArray, callback){
 var alreadyExists = [];
 
 function OnlyOneDirectory(){
-  var finalPath = '/Users/aramirez/Desktop/rootDir/lote1/lote1F';
+  var finalPath = '/Users/arielramirez/Documents/Ariel/TILEPROJ/rootDir/lote3_11020376/11020376_3_1';
   console.log('getting paths OnlyOneDirectory!\n');
-  const query = 'select distinct cuadrant from pathTiles where  cuadrant<>"lote1F" or cuadrant<>"lote2--full___lote3--11020324-11020392";';
+  const query = 'select distinct cuadrant from pathTiles where  cuadrant<>"11020376_3_1";';
   sqlite.query(query, (cuadrants) => {
     cuadrants.forEach(cuadrant => {
       var counterProgress = 0;
-      const query2 = `select * from pathTiles where cuadrant='${cuadrant.cuadrant}';`;
+      const query2 = `select * from pathTiles where cuadrant='${cuadrant.cuadrant}' and repeat_flag=0;`;
       sqlite.query(query2, (objects) => {
         objects.forEach(sqliteObject => {
           counterProgress++;
-          if(sqliteObject.cuadrant != 'lote1F' && sqliteObject.cuadrant != 'lote2--full___lote3--11020324-11020392'){
+          if(sqliteObject.cuadrant != '11020376_3_1'){
             if(!fs.existsSync(`${finalPath}/${sqliteObject.level_zoom}/${sqliteObject.dir_1}`)){
               fs.mkdirSync(`${finalPath}/${sqliteObject.level_zoom}/${sqliteObject.dir_1}`, 0o777)
             }
