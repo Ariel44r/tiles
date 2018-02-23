@@ -4,7 +4,8 @@ const readLine = require('readline'),
       overlay = require('./overlay.js'),
       sqlite = require('./sqlite.js'),
       path = require('./path.js'),
-      fs = require('fs');
+      fs = require('fs'),
+      replace = require('replace-in-file');
       rl = readLine.createInterface({
         input: process.stdin,
         output: process.stdout,
@@ -13,8 +14,8 @@ const readLine = require('readline'),
 
 var sqlObjectsRepeat = [];
 var sqlRepeat = [];
-var path1 = pathVar.getPath('tiles.1') + '/tiles1/0/3631.png';
-var path2 = pathVar.getPath('tiles.1') + '/tiles2/0/3631.png';
+var path1 = pathVar.getPath('tiles.1') + '/tiles1/0/0.png';
+var path2 = pathVar.getPath('tiles.1') + '/tiles2/0/0.png';
 //var path1 = '/Users/aramirez/Desktop/rootDir/lote4/11020447/16/14563/28953.png';
 //var path2 = '/Users/aramirez/Desktop/rootDir/lote4/11020448/16/14563/28953.png';
 sqlite.createDBandTable();
@@ -232,26 +233,14 @@ function getRepeatPathsT(){
   sqlite.query(queryRepeatPaths, (rowsRepeat) => {
     sqlObjectsRepeat = rowsRepeat;
     const queryRepeatDistinct = 'select distinct repeat from pathTilesRepeat;';
-    sqlite.query(queryRepeatDistinct, (rowsDistinct) => {
-      rowsDistinct.forEach(rowDistinct => {
-        let pathsRepeat = getPathWithID(rowDistinct);
-        pathsRepeat.forEach(pathRepeat => {
-          if(pathRepeat != pathsRepeat[0]){
-            overlay.overlay(pathsRepeat[0], pathRepeat, rowDistinct.repeat, (oldPath, id) => {
-              if(oldPath != false){
-                var pathArray = [oldPath, pathsRepeat[0], pathRepeat];
-                renameFile(pathArray, (isMerged) => {
-                  if(isMerged){
-                    console.log('writeFile: success!');
-                  }
-                });
-              }
-            });
-          }
-        });
-      });
+    sqlite.query(queryRepeatDistinct, (repeatDistinct) => {
+      for(var i=0; i<repeatDistinct.length; i++){
+        let pathsRepeat = getPathWithID(repeatDistinct[i]);
+        for(var j=1; j<pathsRepeat.length; j++){
+          overlay.overlay(pathsRepeat[0], pathsRepeat[j], repeatDistinct[i].repeat);
+        }
+      }  
     });
-    console.log(`not found: ${notFound.level_zoom}`);
     rl.prompt();
   });
 }
@@ -302,7 +291,7 @@ function renameFile(pathArray, callback){
       unlinkFile(pathArray[2]);
       callback(true);
     } else{
-      notFound.push(pathArray[1]);
+      console.log('FileNotFound: ' + pathArray[1]);
     }
   }
 }
@@ -310,13 +299,13 @@ function renameFile(pathArray, callback){
 var alreadyExists = [];
 
 function OnlyOneDirectory(){
-  var finalPath = '/Users/arielramirez/Documents/Ariel/TILEPROJ/rootDir/lote3_11020376/11020376_3_1';
+  var finalPath = '/home/ariel/Documents/Development/NodeJS/rootDir/main';
   console.log('getting paths OnlyOneDirectory!\n');
-  const query = 'select distinct cuadrant from pathTiles where  cuadrant<>"11020376_3_1";';
+  const query = 'select distinct cuadrant from pathTilesRepeat;';
   sqlite.query(query, (cuadrants) => {
     cuadrants.forEach(cuadrant => {
       var counterProgress = 0;
-      const query2 = `select * from pathTiles where cuadrant='${cuadrant.cuadrant}' and repeat_flag=0;`;
+      const query2 = `select * from pathTilesRepeat where cuadrant='${cuadrant.cuadrant}' and repeat_flag=0;`;
       sqlite.query(query2, (objects) => {
         objects.forEach(sqliteObject => {
           counterProgress++;
@@ -327,18 +316,9 @@ function OnlyOneDirectory(){
             const path_1 = `${path.getFullPath(sqliteObject)}`;
             const path_2 = `${finalPath}/${sqliteObject.level_zoom}/${sqliteObject.dir_1}/${sqliteObject.file_name}.png`;
             var pathArray = [path_1, path_2];
-            moveFile(pathArray, (isMoved) => {
-              if(isMoved){
-                console.log('\n\n move file: success! :D');
-                console.log(`source: ${pathArray[0]}`);
-                console.log(`target: ${pathArray[1]}`);
-                console.log(`progress: cuadrant ${cuadrant.cuadrant} ${100*counterProgress/objects.length} %`);
-              } else{
-                console.log('\n\n move file: failed :`(');
-                console.log(`source: ${pathArray[0]}`);
-                console.log(`target: ${pathArray[1]}`);
-              }
-            });
+            moveFile(pathArray);
+            console.log(`\n\nprogress: cuadrant ${cuadrant.cuadrant}`);
+            console.log(`<[ ${100*counterProgress/objects.length} % ]>`);
           }
         })
         alreadyExists.forEach(element => {
@@ -350,12 +330,15 @@ function OnlyOneDirectory(){
   });
 }
 
-function moveFile(pathArray, callback){
+function moveFile(pathArray){
   unlinkFile(pathArray[1]);
   if(fs.existsSync(pathArray[0])){
     if(!fs.existsSync(pathArray[1])){
       fs.renameSync(pathArray[0], pathArray[1]);
-      callback(true);
+      console.log('move file: success! :D');
+      console.log(`source: ${pathArray[0]}`);
+      console.log(`target: ${pathArray[1]}`);
+      //callback(true);
     } else{
       alreadyExists.push(pathArray[1]);
     }

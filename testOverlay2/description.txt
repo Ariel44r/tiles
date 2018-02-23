@@ -1,1 +1,0 @@
-this directory contain the route that save temporaly tile merged png images, please don't delete!

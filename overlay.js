@@ -31,35 +31,47 @@ exports.overlayTest = function(path1, path2, callback) {
   });
 }
 
-exports.overlay = function(path1, path2, id, callback) {
+exports.overlay = function(path1, path2, id) {
   var oldPath = `testOverlay2/${id}_${path.basename(path1)}`;
-  fs.exists(path1, (exists) => {
-    if (exists) {
-      fs.exists(path2, (exists) => {
-          if (exists == true) {
+    if (fs.existsSync(path1)) {
+          if (fs.existsSync(path2)) {
             sharp(path1)
             .overlayWith(path2, { gravity: sharp.gravity.southeast } )
             .toFile(oldPath, (err => {
               if(err == null){
-                unlinkFile(path1);
+                //unlinkFile(path1);
                 unlinkFile(path2);
-                callback(oldPath, id);
+                //callback(oldPath, id);
+                renameFile(oldPath, path1);
               } else {
                 console.log(err);
               }
             }))
           } else {
             console.log(`File '${path2}' not exists`);
-            callback(false);
+            //callback(false);
             rl.prompt();
           }
-      });
     } else {
       console.log(`File '${path1}' not exists`);
-      callback(false);
+      //callback(false);
       rl.prompt();
     }
-  });
+}
+
+function renameFile(source, target){
+  if(fs.existsSync(source)){
+    if(!fs.existsSync(target)){
+      fs.renameSync(source, target);
+      console.log('writeFile: ' + target);
+      //callback(true);
+      console.log('writeFile: success!');
+      console.log(`source: ${source}`);
+      console.log(`target: ${target}`);
+    } else{
+      console.log('FileNotFound: ' + target);
+    }
+  }
 }
 
 function unlinkFile(unlinkPath){
