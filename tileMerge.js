@@ -5,7 +5,6 @@ const readLine = require('readline'),
       sqlite = require('./sqlite.js'),
       path = require('./path.js'),
       fs = require('fs'),
-      replace = require('replace-in-file');
       rl = readLine.createInterface({
         input: process.stdin,
         output: process.stdout,
@@ -236,8 +235,15 @@ function getRepeatPathsT(){
     sqlite.query(queryRepeatDistinct, (repeatDistinct) => {
       for(var i=0; i<repeatDistinct.length; i++){
         let pathsRepeat = getPathWithID(repeatDistinct[i]);
+        //overlay.mergeImg(pathsRepeat, repeatDistinct[i].repeat);
         for(var j=1; j<pathsRepeat.length; j++){
-          overlay.overlay(pathsRepeat[0], pathsRepeat[j], repeatDistinct[i].repeat);
+          const util = require('util');
+          const setTimeoutPromise = util.promisify(setTimeout);
+          setTimeoutPromise(4000, 'foobar').then((value) => {
+            // value === 'foobar' (passing values is optional)
+            // This is executed after about 40 milliseconds.
+            overlay.overlay(pathsRepeat[0], pathsRepeat[j]);
+          });
         }
       }  
     });
@@ -299,7 +305,7 @@ function renameFile(pathArray, callback){
 var alreadyExists = [];
 
 function OnlyOneDirectory(){
-  var finalPath = '/home/ariel/Documents/Development/NodeJS/rootDir/main';
+  var finalPath = '/Users/arielramirez/Documents/Ariel/TILEPROJ/rootDir/main';
   console.log('getting paths OnlyOneDirectory!\n');
   const query = 'select distinct cuadrant from pathTilesRepeat;';
   sqlite.query(query, (cuadrants) => {
@@ -309,7 +315,7 @@ function OnlyOneDirectory(){
       sqlite.query(query2, (objects) => {
         objects.forEach(sqliteObject => {
           counterProgress++;
-          if(sqliteObject.cuadrant != '11020376_3_1'){
+          if(sqliteObject.cuadrant != ''){
             if(!fs.existsSync(`${finalPath}/${sqliteObject.level_zoom}/${sqliteObject.dir_1}`)){
               fs.mkdirSync(`${finalPath}/${sqliteObject.level_zoom}/${sqliteObject.dir_1}`, 0o777)
             }
@@ -318,7 +324,7 @@ function OnlyOneDirectory(){
             var pathArray = [path_1, path_2];
             moveFile(pathArray);
             console.log(`\n\nprogress: cuadrant ${cuadrant.cuadrant}`);
-            console.log(`<[ ${100*counterProgress/objects.length} % ]>`);
+            console.log(`[ ${100*counterProgress/objects.length} % ]`);
           }
         })
         alreadyExists.forEach(element => {

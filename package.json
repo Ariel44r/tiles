@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "randomstring": "^1.1.5",
-    "replace-in-file": "^3.1.1",
     "sharp": "^0.18.4",
     "sqlite3": "^3.1.13"
   }
