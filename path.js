@@ -1,4 +1,6 @@
 const path = require('path'),
+      utilsjs = require('./Utils.js'),
+      utils = require('./Utils.js'),
       fs = require('fs');
 var mainPath;
 
@@ -20,4 +22,8 @@ exports.basename = function(fileName) {
 
 exports.getFullPath = function(sqlObject){
     return(`${sqlObject.root_dir}/${sqlObject.lote}/${sqlObject.cuadrant}/${sqlObject.level_zoom}/${sqlObject.dir_1}/${sqlObject.file_name}.png`);
+}
+
+exports.getFinalPathFromObject = function(sqliteObject){
+    return `${utils.finalPath}/${sqliteObject.level_zoom}/${sqliteObject.dir_1}/${sqliteObject.file_name}.png`;
 }

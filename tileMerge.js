@@ -5,6 +5,7 @@ const readLine = require('readline'),
       sqlite = require('./sqlite.js'),
       path = require('./path.js'),
       fs = require('fs'),
+      utils = require('./Utils.js'),
       rl = readLine.createInterface({
         input: process.stdin,
         output: process.stdout,
@@ -227,24 +228,14 @@ function getRepeatPathsF(){
 }
 
 function getRepeatPathsT(){
-  var tilesMerged = [];
   const queryRepeatPaths = 'select *, rowid from pathTilesRepeat;';
   sqlite.query(queryRepeatPaths, (rowsRepeat) => {
     sqlObjectsRepeat = rowsRepeat;
     const queryRepeatDistinct = 'select distinct repeat from pathTilesRepeat;';
     sqlite.query(queryRepeatDistinct, (repeatDistinct) => {
       for(var i=0; i<repeatDistinct.length; i++){
-        let pathsRepeat = getPathWithID(repeatDistinct[i]);
-        //overlay.mergeImg(pathsRepeat, repeatDistinct[i].repeat);
-        for(var j=1; j<pathsRepeat.length; j++){
-          const util = require('util');
-          const setTimeoutPromise = util.promisify(setTimeout);
-          setTimeoutPromise(4000, 'foobar').then((value) => {
-            // value === 'foobar' (passing values is optional)
-            // This is executed after about 40 milliseconds.
-            overlay.overlay(pathsRepeat[0], pathsRepeat[j]);
-          });
-        }
+        overlay.overlayRec(getObjectsWithID(repeatDistinct[i]));
+        console.log(`Progress: ${100*i/repeatDistinct.length} %\n`);
       }  
     });
     rl.prompt();
@@ -257,6 +248,18 @@ function getPathWithID(rowRepeat){
     for(var i=0;i<sqlObjectsRepeat.length;i++){
       if(sqlObjectsRepeat[i].repeat == rowRepeat.repeat){
         repeatItems.push(path.getFullPath(sqlObjectsRepeat[i]));
+      }
+    }
+    return repeatItems;
+  }
+}
+
+function getObjectsWithID(rowRepeat){
+  if(sqlObjectsRepeat.length != 0){
+    var repeatItems = [];
+    for(var i=0;i<sqlObjectsRepeat.length;i++){
+      if(sqlObjectsRepeat[i].repeat == rowRepeat.repeat){
+        repeatItems.push(sqlObjectsRepeat[i]);
       }
     }
     return repeatItems;
@@ -305,13 +308,13 @@ function renameFile(pathArray, callback){
 var alreadyExists = [];
 
 function OnlyOneDirectory(){
-  var finalPath = '/Users/arielramirez/Documents/Ariel/TILEPROJ/rootDir/main';
+  var finalPath = utils.finalPath;
   console.log('getting paths OnlyOneDirectory!\n');
-  const query = 'select distinct cuadrant from pathTilesRepeat;';
+  const query = 'select distinct cuadrant from pathTiles;';
   sqlite.query(query, (cuadrants) => {
     cuadrants.forEach(cuadrant => {
       var counterProgress = 0;
-      const query2 = `select * from pathTilesRepeat where cuadrant='${cuadrant.cuadrant}' and repeat_flag=0;`;
+      const query2 = `select * from pathTiles where cuadrant='${cuadrant.cuadrant}' and repeat_flag=0;`;
       sqlite.query(query2, (objects) => {
         objects.forEach(sqliteObject => {
           counterProgress++;
