@@ -168,6 +168,7 @@ function repeatT(){
     sqlObjectsRepeat = resp;
     var query2 = 'select *, count(*) from pathTiles group by file_name, level_zoom, dir_1 having count(*) > 1;';
     sqlite.query(query2, (resp2) => {
+      console.log(resp2.length);
       for(var i=0;i<resp2.length;i++){
         getRepeatSQLObjects(resp2[i]);
       }
@@ -181,7 +182,6 @@ function getRepeatSQLObjects(sqlObject){
   sqlite.randomStringVal((rndmString) =>{
     sqlObject.repeat = rndmString;
     for(var i=0;i<sqlObjectsRepeat.length;i++){
-      //console.log(`${sqlObjectsRepeat[i].file_name} ${sqlObjectsRepeat[i].repeat}`);
       if(sqlObject != sqlObjectsRepeat[i] && sqlObject.level_zoom == sqlObjectsRepeat[i].level_zoom && sqlObject.dir_1 == sqlObjectsRepeat[i].dir_1 && sqlObject.file_name == sqlObjectsRepeat[i].file_name){
         sqlObjectsRepeat[i].repeat = rndmString;
         sqlRepeat.push(sqlObjectsRepeat[i]);
@@ -191,10 +191,21 @@ function getRepeatSQLObjects(sqlObject){
 }
 
 function insertSecondDB(){
-  if(sqlRepeat.length > 150000){
-    var sqlRepeatSplit = [];
-    for(var i=0;i<150000;i++){
-      sqlRepeatSplit.push(sqlRepeat[i]);
+  var maxValue = 150000;
+  if(sqlRepeat.length > maxValue){
+    var integer = Math.floor(sqlRepeat.length/maxValue);
+    for(var h=0; h<integer; h++){
+      var sqlRepeatSplit = [];
+      for(var i=0;i<maxValue;i++){
+        sqlRepeatSplit.push(sqlRepeat[i + h*maxValue]);
+      }
+      sqlite.insertRecordRepeat(sqlRepeatSplit,'pathTilesRepeat');
+    }
+    var integeer2 = sqlRepeat.length - integer*maxValue;
+    var initVal = sqlRepeat.length - integeer2;
+    sqlRepeatSplit = [];
+    for(var j=initVal;j<sqlRepeat.length;j++){
+      sqlRepeatSplit.push(sqlRepeat[j]);
     }
     sqlite.insertRecordRepeat(sqlRepeatSplit,'pathTilesRepeat');
   } else{
@@ -235,7 +246,7 @@ function getRepeatPathsT(){
     sqlite.query(queryRepeatDistinct, (repeatDistinct) => {
       for(var i=0; i<repeatDistinct.length; i++){
         overlay.overlayRec(getObjectsWithID(repeatDistinct[i]));
-        console.log(`Progress: ${100*i/repeatDistinct.length} %\n`);
+        console.log(`[ Progress: ${100*i/repeatDistinct.length} % ]\n`);
       }  
     });
     rl.prompt();
@@ -314,7 +325,7 @@ function OnlyOneDirectory(){
   sqlite.query(query, (cuadrants) => {
     cuadrants.forEach(cuadrant => {
       var counterProgress = 0;
-      const query2 = `select * from pathTiles where cuadrant='${cuadrant.cuadrant}' and repeat_flag=0;`;
+      const query2 = `select * from pathTiles where cuadrant='${cuadrant.cuadrant}' and repeat_flag=0 and rowid>3340396;`;
       sqlite.query(query2, (objects) => {
         objects.forEach(sqliteObject => {
           counterProgress++;

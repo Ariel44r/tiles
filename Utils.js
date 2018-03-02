@@ -1,2 +1,2 @@
-var Path = '/home/ariel/Documents/Development/NodeJS/refact/rootDir/main';
+var Path = '/Users/aramirez/Desktop/rootDir/main';
 exports.finalPath = Path;
