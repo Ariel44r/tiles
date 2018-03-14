@@ -14,8 +14,8 @@ const readLine = require('readline'),
 
 var sqlObjectsRepeat = [];
 var sqlRepeat = [];
-var path1 = pathVar.getPath('tiles.1') + '/tiles1/0/0.png';
-var path2 = pathVar.getPath('tiles.1') + '/tiles2/0/0.png';
+var path1 = pathVar.getPath('tiles.1') + '/tiles1/0/57.png';
+var path2 = pathVar.getPath('tiles.1') + '/tiles2/0/57.png';
 //var path1 = '/Users/aramirez/Desktop/rootDir/lote4/11020447/16/14563/28953.png';
 //var path2 = '/Users/aramirez/Desktop/rootDir/lote4/11020448/16/14563/28953.png';
 sqlite.createDBandTable();
@@ -49,7 +49,6 @@ rl.on('line', (line) => {
       clearScreen();
       break;
     case 'onlyone':
-      //call the function to move all files to only one directory
       OnlyOneDirectory();
       break;
     case 'exit':
@@ -325,7 +324,7 @@ function OnlyOneDirectory(){
   sqlite.query(query, (cuadrants) => {
     cuadrants.forEach(cuadrant => {
       var counterProgress = 0;
-      const query2 = `select * from pathTiles where cuadrant='${cuadrant.cuadrant}' and repeat_flag=0 and rowid>3340396;`;
+      const query2 = `select *, rowid from pathTiles where cuadrant='${cuadrant.cuadrant}' and repeat_flag=0 and level_zoom>0;`;
       sqlite.query(query2, (objects) => {
         objects.forEach(sqliteObject => {
           counterProgress++;
@@ -337,8 +336,8 @@ function OnlyOneDirectory(){
             const path_2 = `${finalPath}/${sqliteObject.level_zoom}/${sqliteObject.dir_1}/${sqliteObject.file_name}.png`;
             var pathArray = [path_1, path_2];
             moveFile(pathArray);
-            console.log(`\n\nprogress: cuadrant ${cuadrant.cuadrant}`);
-            console.log(`[ ${100*counterProgress/objects.length} % ]`);
+            console.log(`\n\nCuadrant: ${cuadrant.cuadrant}`);
+            console.log(`[ progress: ${100*counterProgress/objects.length} % ]`);
           }
         })
         alreadyExists.forEach(element => {
@@ -351,7 +350,7 @@ function OnlyOneDirectory(){
 }
 
 function moveFile(pathArray){
-  unlinkFile(pathArray[1]);
+  //unlinkFile(pathArray[1]);
   if(fs.existsSync(pathArray[0])){
     if(!fs.existsSync(pathArray[1])){
       fs.renameSync(pathArray[0], pathArray[1]);
