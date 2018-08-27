@@ -15,6 +15,7 @@ const readLine = require('readline'),
 var sqlObjectsRepeat = [];
 var sqlRepeat = [];
 var mainCounter = 0
+var lenghtOfRepeatPaths = 0
 
 var path1 = pathVar.getPath('tiles.1') + '/tiles1/0/57.png';
 var path2 = pathVar.getPath('tiles.1') + '/tiles2/0/57.png';
@@ -170,6 +171,7 @@ function repeatT(){
     sqlObjectsRepeat = resp
     var query2 = 'select *, count(*) from pathTiles group by file_name, level_zoom, dir_1 having count(*) > 1;';
     sqlite.query(query2, (resp2) => {
+      lenghtOfRepeatPaths = resp2.length
       console.log(`${resp2.length} tiles grouped`);
       for(var i=0;i<resp2.length;i++){
         getRepeatSQLObjects(resp2[i]);
@@ -198,6 +200,12 @@ function getRepeatSQLObjects(sqlObject){
         if (sqlRepeat.length == 150000) {
           insertSnippetSQLSecondDB(sqlRepeat)
           sqlRepeat = []
+          
+        }
+        if (mainCounter == lenghtOfRepeatPaths) {
+          insertSnippetSQLSecondDB(sqlRepeat)
+          sqlRepeat = []
+
         }
       } else {
         //console.log(`counterNotChange: ${sqlRepeat.length}, randomString: ${rndmString}`)
