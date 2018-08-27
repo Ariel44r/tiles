@@ -14,6 +14,8 @@ const readLine = require('readline'),
 
 var sqlObjectsRepeat = [];
 var sqlRepeat = [];
+var mainCounter = 0
+
 var path1 = pathVar.getPath('tiles.1') + '/tiles1/0/57.png';
 var path2 = pathVar.getPath('tiles.1') + '/tiles2/0/57.png';
 //var path1 = '/Users/aramirez/Desktop/rootDir/lote4/11020447/16/14563/28953.png';
@@ -113,6 +115,7 @@ function moveToDBRepeat() {
         sqlite.insertRecord(rowsToUpdate, 'pathTilesRepeat');
         counter = 0;
         rowsToUpdate = [];
+
       }
     });
     sqlite.insertRecord(rowsToUpdate, 'pathTilesRepeat');
@@ -163,15 +166,15 @@ function repeatF(){
 function repeatT(){
   var query = 'select * from pathTiles where repeat_flag=1;';  
   sqlite.query(query, (resp) => {
-    console.log(resp.length);
-    sqlObjectsRepeat = resp;
+    console.log(`${resp.length} + 'tiles with repeat_flag = 1'`);
+    sqlObjectsRepeat = resp
     var query2 = 'select *, count(*) from pathTiles group by file_name, level_zoom, dir_1 having count(*) > 1;';
     sqlite.query(query2, (resp2) => {
-      console.log(resp2.length);
+      console.log(`${resp2.length} tiles grouped`);
       for(var i=0;i<resp2.length;i++){
         getRepeatSQLObjects(resp2[i]);
       }
-      insertSecondDB();
+      //insertSecondDB();
     });
     rl.prompt();
   });
@@ -181,12 +184,50 @@ function getRepeatSQLObjects(sqlObject){
   sqlite.randomStringVal((rndmString) =>{
     sqlObject.repeat = rndmString;
     for(var i=0;i<sqlObjectsRepeat.length;i++){
-      if(sqlObject != sqlObjectsRepeat[i] && sqlObject.level_zoom == sqlObjectsRepeat[i].level_zoom && sqlObject.dir_1 == sqlObjectsRepeat[i].dir_1 && sqlObject.file_name == sqlObjectsRepeat[i].file_name){
+      var sqlObjectN = sqlObjectsRepeat[i]
+      if(sqlObject != sqlObjectN && sqlObject.level_zoom == sqlObjectsRepeat[i].level_zoom && sqlObject.dir_1 == sqlObjectsRepeat[i].dir_1 && sqlObject.file_name == sqlObjectsRepeat[i].file_name){
         sqlObjectsRepeat[i].repeat = rndmString;
+        mainCounter++;
+        console.log(`\n progress: ${100*mainCounter/sqlObjectsRepeat.length}%`)
         sqlRepeat.push(sqlObjectsRepeat[i]);
+        console.log(`\rcounter: ${sqlRepeat.length}, randomString: ${rndmString}`)
+        console.log(path.getFullPath(sqlObjectN))
+        const index = sqlObjectsRepeat.indexOf(sqlObjectN);
+        sqlObjectsRepeat.splice(index, 1);
+        console.log(`\r ${sqlObjectsRepeat.length} objects remain @ sqlObjectRepeat`)
+        if (sqlRepeat.length == 150000) {
+          insertSnippetSQLSecondDB(sqlRepeat)
+          sqlRepeat = []
+        }
+      } else {
+        //console.log(`counterNotChange: ${sqlRepeat.length}, randomString: ${rndmString}`)
+        process.stdout.write(`\rcounterNotChange: ${sqlRepeat.length}, randomString: ${rndmString}`);
       }
     }
   });
+}
+
+function insertSnippetSQLSecondDB(sqlObjectSnippet){
+  var maxValue = 150000;
+  if(sqlRepeat.length > maxValue){
+    var integer = Math.floor(sqlRepeat.length/maxValue);
+    for(var h=0; h<integer; h++){
+      var sqlRepeatSplit = [];
+      for(var i=0;i<maxValue;i++){
+        sqlRepeatSplit.push(sqlRepeat[i + h*maxValue]);
+      }
+      sqlite.insertRecordRepeat(sqlRepeatSplit,'pathTilesRepeat');
+    }
+    var integeer2 = sqlRepeat.length - integer*maxValue;
+    var initVal = sqlRepeat.length - integeer2;
+    sqlRepeatSplit = [];
+    for(var j=initVal;j<sqlRepeat.length;j++){
+      sqlRepeatSplit.push(sqlRepeat[j]);
+    }
+    sqlite.insertRecordRepeat(sqlRepeatSplit,'pathTilesRepeat');
+  } else{
+    sqlite.insertRecordRepeat(sqlObjectSnippet,'pathTilesRepeat');
+  }
 }
 
 function insertSecondDB(){

@@ -1,2 +1,2 @@
-var Path = '/Users/aramirez/Desktop/rootDir/main';
+var Path = '/Users/arielramirez/Desktop/tilesFromHardDrive/main';
 exports.finalPath = Path;
