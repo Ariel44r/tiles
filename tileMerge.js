@@ -36,6 +36,9 @@ rl.on('line', (line) => {
     case 'query repeat':
       sqliteQueryR();
       break;
+    case 'groupped paths':
+      getGrouppedPaths()
+      break;
     case 'repeat':
       repeatT();
       break;
@@ -200,7 +203,7 @@ function getRepeatSQLObjects(sqlObject){
         if (sqlRepeat.length == 150000) {
           insertSnippetSQLSecondDB(sqlRepeat)
           sqlRepeat = []
-          
+
         }
         if (mainCounter == lenghtOfRepeatPaths) {
           insertSnippetSQLSecondDB(sqlRepeat)
@@ -415,4 +418,52 @@ function moveFile(pathArray){
 
 function clearScreen() {
   console.clear();
+}
+
+//last fixed improvements
+
+function getGrouppedPaths() {
+  var querygrouppedPathsQuery = 'select *, count(*) from pathTiles group by file_name, level_zoom, dir_1 having count(*) > 1;';
+    sqlite.query(querygrouppedPathsQuery, (grouppedPaths) => {
+      lenghtOfRepeatPaths = grouppedPaths.length
+      console.log(`${grouppedPaths.length} tiles groupped`);
+      for(var i=0;i<grouppedPaths.length;i++){
+        var counterChange = i
+      }
+      grouppedPaths.forEach( (path) => {
+        var pathsOfGroupQuery = `select * from pathTiles where level_zoom=${path.level_zoom} and dir_1=${path.dir_1} and file_name=${path.file_name}; `;
+        sqlite.query(pathsOfGroupQuery, (pathsOfGroup) => {
+          console.log(`${pathsOfGroup.length} paths of group`);
+          insertSQLObjectsGroupped(path, pathsOfGroup)
+
+        })
+      })
+    });
+}
+
+function insertSQLObjectsGroupped(grouppedPath, sqlOGrouppedbjects){
+  mainCounter++;
+  console.log((`\n MAIN PROGRESS: ${100*mainCounter/lenghtOfRepeatPaths}%`))
+  sqlite.randomStringVal((rndmString) =>{
+    grouppedPath.repeat = rndmString;
+    for(var i=0;i<sqlOGrouppedbjects.length;i++){
+      var sqlObjectN = sqlOGrouppedbjects[i]
+      if(grouppedPath != sqlObjectN && grouppedPath.level_zoom == sqlOGrouppedbjects[i].level_zoom && grouppedPath.dir_1 == sqlOGrouppedbjects[i].dir_1 && grouppedPath.file_name == sqlOGrouppedbjects[i].file_name){
+        sqlOGrouppedbjects[i].repeat = rndmString;
+
+        process.stdout.write(`\r progress: ${100*i/sqlOGrouppedbjects.length}%`)
+        sqlRepeat.push(sqlOGrouppedbjects[i]);
+        console.log(`\rcounter: ${sqlRepeat.length}, randomString: ${rndmString}`)
+        console.log(path.getFullPath(sqlObjectN))
+        if (i == sqlOGrouppedbjects.length-1) {
+          insertSnippetSQLSecondDB(sqlRepeat)
+          sqlRepeat = []
+
+        }
+      } else {
+        //console.log(`counterNotChange: ${sqlRepeat.length}, randomString: ${rndmString}`)
+        process.stdout.write(`\rcounterNotChange: ${sqlRepeat.length}, randomString: ${rndmString}`);
+      }
+    }
+  });
 }
