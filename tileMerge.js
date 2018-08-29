@@ -9,13 +9,14 @@ const readLine = require('readline'),
       rl = readLine.createInterface({
         input: process.stdin,
         output: process.stdout,
-        prompt: 'tileMerge > '
+        prompt: 'ArmitMerge > '
       });
 
 var sqlObjectsRepeat = [];
 var sqlRepeat = [];
 var mainCounter = 0
 var lenghtOfRepeatPaths = 0
+var index = 0
 
 var path1 = pathVar.getPath('tiles.1') + '/tiles1/0/57.png';
 var path2 = pathVar.getPath('tiles.1') + '/tiles2/0/57.png';
@@ -41,6 +42,9 @@ rl.on('line', (line) => {
       break;
     case 'repeat':
       repeatT();
+      break;
+      case 'migrate':
+      migrateLevel16();
       break;
     case 'getrepeat':
       moveToDBRepeat();
@@ -227,7 +231,7 @@ function insertSnippetSQLSecondDB(sqlObjectSnippet){
       for(var i=0;i<maxValue;i++){
         sqlRepeatSplit.push(sqlRepeat[i + h*maxValue]);
       }
-      sqlite.insertRecordRepeat(sqlRepeatSplit,'pathTilesRepeat');
+      sqlite.insertRecordRepeat(sqlRepeatSplit,`${utils.tableInsert}`);
     }
     var integeer2 = sqlRepeat.length - integer*maxValue;
     var initVal = sqlRepeat.length - integeer2;
@@ -235,9 +239,32 @@ function insertSnippetSQLSecondDB(sqlObjectSnippet){
     for(var j=initVal;j<sqlRepeat.length;j++){
       sqlRepeatSplit.push(sqlRepeat[j]);
     }
-    sqlite.insertRecordRepeat(sqlRepeatSplit,'pathTilesRepeat');
+    sqlite.insertRecordRepeat(sqlRepeatSplit,`${utils.tableInsert}`);
   } else{
-    sqlite.insertRecordRepeat(sqlObjectSnippet,'pathTilesRepeat');
+    sqlite.insertRecordRepeat(sqlObjectSnippet,`${utils.tableInsert}`);
+  }
+}
+
+function insertIntoLevel16DB(sqlObjectSnippet){
+  var maxValue = 150000;
+  if(sqlRepeat.length > maxValue){
+    var integer = Math.floor(sqlRepeat.length/maxValue);
+    for(var h=0; h<integer; h++){
+      var sqlRepeatSplit = [];
+      for(var i=0;i<maxValue;i++){
+        sqlRepeatSplit.push(sqlRepeat[i + h*maxValue]);
+      }
+      sqlite.insertRecordRepeat(sqlRepeatSplit,'pathTilesLevel14');
+    }
+    var integeer2 = sqlRepeat.length - integer*maxValue;
+    var initVal = sqlRepeat.length - integeer2;
+    sqlRepeatSplit = [];
+    for(var j=initVal;j<sqlRepeat.length;j++){
+      sqlRepeatSplit.push(sqlRepeat[j]);
+    }
+    sqlite.insertRecordRepeat(sqlRepeatSplit,'pathTilesLevel14');
+  } else{
+    sqlite.insertRecordRepeat(sqlObjectSnippet,'pathTilesLevel14');
   }
 }
 
@@ -290,10 +317,10 @@ function getRepeatPathsF(){
 }
 
 function getRepeatPathsT(){
-  const queryRepeatPaths = 'select *, rowid from pathTilesRepeat;';
+  const queryRepeatPaths = `select *, rowid from ${utils.tableInsert};`;
   sqlite.query(queryRepeatPaths, (rowsRepeat) => {
     sqlObjectsRepeat = rowsRepeat;
-    const queryRepeatDistinct = 'select distinct repeat from pathTilesRepeat;';
+    const queryRepeatDistinct = `select distinct repeat from ${utils.tableInsert};`;
     sqlite.query(queryRepeatDistinct, (repeatDistinct) => {
       for(var i=0; i<repeatDistinct.length; i++){
         overlay.overlayRec(getObjectsWithID(repeatDistinct[i]));
@@ -423,27 +450,43 @@ function clearScreen() {
 //last fixed improvements
 
 function getGrouppedPaths() {
-  var querygrouppedPathsQuery = 'select *, count(*) from pathTiles group by file_name, level_zoom, dir_1 having count(*) > 1;';
+  var querygrouppedPathsQuery = `select *, count(*) from ${utils.table} group by file_name, level_zoom, dir_1 having count(*) > 1;`;
     sqlite.query(querygrouppedPathsQuery, (grouppedPaths) => {
       lenghtOfRepeatPaths = grouppedPaths.length
       console.log(`${grouppedPaths.length} tiles groupped`);
-      for(var i=0;i<grouppedPaths.length;i++){
-        var counterChange = i
-      }
-      grouppedPaths.forEach( (path) => {
-        var pathsOfGroupQuery = `select * from pathTiles where level_zoom=${path.level_zoom} and dir_1=${path.dir_1} and file_name=${path.file_name}; `;
-        sqlite.query(pathsOfGroupQuery, (pathsOfGroup) => {
-          console.log(`${pathsOfGroup.length} paths of group`);
-          insertSQLObjectsGroupped(path, pathsOfGroup)
+      
+      // grouppedPaths.forEach( (path) => {
+      //   index ++;
+      //   var pathsOfGroupQuery = `select * from ${utils.table} where level_zoom=${path.level_zoom} and dir_1=${path.dir_1} and file_name=${path.file_name}; `;
+      //   sqlite.query(pathsOfGroupQuery, (pathsOfGroup) => {
+      //     console.log(`\n\n ${pathsOfGroup.length} paths of group, TABLE: ${utils.table}`);
+      //     insertSQLObjectsGroupped(path, pathsOfGroup)
 
-        })
-      })
+      //   })
+      // })
+      getGrouppedPathsRec(grouppedPaths);
     });
+}
+
+function getGrouppedPathsRec(grouppedPathsR) {
+  var path = grouppedPathsR[0];
+  var pathsOfGroupQuery = `select * from ${utils.table} where level_zoom=${path.level_zoom} and dir_1=${path.dir_1} and file_name=${path.file_name}; `;
+  sqlite.query(pathsOfGroupQuery, (pathsOfGroup) => {
+    console.log(`\n\n ${pathsOfGroup.length} paths of group, TABLE: ${utils.table}`);
+    insertSQLObjectsGroupped(path, pathsOfGroup)
+    grouppedPathsR.splice(1,1);
+    console.log(`groupped paths: ${grouppedPathsR.length}`);
+    if(grouppedPathsR.length > 1){
+      getGrouppedPathsRec(grouppedPathsR);
+      index++;
+      
+    }
+  })
 }
 
 function insertSQLObjectsGroupped(grouppedPath, sqlOGrouppedbjects){
   mainCounter++;
-  console.log((`\n MAIN PROGRESS: ${100*mainCounter/lenghtOfRepeatPaths}%`))
+  console.log((`MAIN PROGRESS: ${100*mainCounter/lenghtOfRepeatPaths}%`))
   sqlite.randomStringVal((rndmString) =>{
     grouppedPath.repeat = rndmString;
     for(var i=0;i<sqlOGrouppedbjects.length;i++){
@@ -466,4 +509,11 @@ function insertSQLObjectsGroupped(grouppedPath, sqlOGrouppedbjects){
       }
     }
   });
+}
+
+function migrateLevel16() {
+  const queryMigrate = `select * from pathTiles where level_zoom = 14;`
+  sqlite.query(queryMigrate, (level16Paths) => {
+    insertIntoLevel16DB(level16Paths);
+  })
 }

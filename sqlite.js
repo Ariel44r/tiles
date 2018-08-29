@@ -15,10 +15,22 @@ exports.createDBandTable = function(){
       fs.openSync(dbPath, 'w');
       console.log('database.db is being created');
     }
-    const createTableSQL = 'CREATE TABLE IF NOT EXISTS pathTiles (root_dir varchar(255) NOT NULL,lote varchar(255),cuadrant varchar(255),level_zoom varchar(255),dir_1 varchar(255),file_name varchar(255),repeat integer,repeat_flag integer);';
+    var createTableSQL = 'CREATE TABLE IF NOT EXISTS pathTiles (root_dir varchar(255) NOT NULL,lote varchar(255),cuadrant varchar(255),level_zoom varchar(255),dir_1 varchar(255),file_name varchar(255),repeat integer,repeat_flag integer);';
     db.run(createTableSQL);
-    const createTableSQLr = 'CREATE TABLE IF NOT EXISTS pathTilesRepeat (root_dir varchar(255) NOT NULL,lote varchar(255),cuadrant varchar(255),level_zoom varchar(255),dir_1 varchar(255),file_name varchar(255),repeat integer,repeat_flag integer);';
-    db.run(createTableSQLr);
+    createTableSQL = 'CREATE TABLE IF NOT EXISTS pathTilesLevel16 (root_dir varchar(255) NOT NULL,lote varchar(255),cuadrant varchar(255),level_zoom varchar(255),dir_1 varchar(255),file_name varchar(255),repeat integer,repeat_flag integer);';
+    db.run(createTableSQL);
+    createTableSQL = 'CREATE TABLE IF NOT EXISTS pathTilesLevel15 (root_dir varchar(255) NOT NULL,lote varchar(255),cuadrant varchar(255),level_zoom varchar(255),dir_1 varchar(255),file_name varchar(255),repeat integer,repeat_flag integer);';
+    db.run(createTableSQL);
+    createTableSQL = 'CREATE TABLE IF NOT EXISTS pathTilesLevel14 (root_dir varchar(255) NOT NULL,lote varchar(255),cuadrant varchar(255),level_zoom varchar(255),dir_1 varchar(255),file_name varchar(255),repeat integer,repeat_flag integer);';
+    db.run(createTableSQL);
+    createTableSQL = 'CREATE TABLE IF NOT EXISTS pathTilesRepeat (root_dir varchar(255) NOT NULL,lote varchar(255),cuadrant varchar(255),level_zoom varchar(255),dir_1 varchar(255),file_name varchar(255),repeat integer,repeat_flag integer);';
+    db.run(createTableSQL);
+    createTableSQL = 'CREATE TABLE IF NOT EXISTS pathTilesRepeatLevel16 (root_dir varchar(255) NOT NULL,lote varchar(255),cuadrant varchar(255),level_zoom varchar(255),dir_1 varchar(255),file_name varchar(255),repeat integer,repeat_flag integer);';
+    db.run(createTableSQL);
+    createTableSQL = 'CREATE TABLE IF NOT EXISTS pathTilesRepeatLevel15 (root_dir varchar(255) NOT NULL,lote varchar(255),cuadrant varchar(255),level_zoom varchar(255),dir_1 varchar(255),file_name varchar(255),repeat integer,repeat_flag integer);';
+    db.run(createTableSQL);
+    createTableSQL = 'CREATE TABLE IF NOT EXISTS pathTilesRepeatLevel14 (root_dir varchar(255) NOT NULL,lote varchar(255),cuadrant varchar(255),level_zoom varchar(255),dir_1 varchar(255),file_name varchar(255),repeat integer,repeat_flag integer);';
+    db.run(createTableSQL);
 }
 
 exports.insertRecord = function(jsonArray, table){
@@ -35,7 +47,7 @@ exports.insertRecordRepeat = function(jsonArray, table){
     buildSQLinsertRepeat(jsonArray, table, (sqlInsertQ) => {
         db.run(sqlInsertQ, (err, resp) => {         //asynch form
             if(err){throw err}
-            console.log(`'${jsonArray[jsonArray.length-1].lote}' insert ${jsonArray.length} records success on ${table}`);
+            console.log(`${jsonArray[jsonArray.length-1].lote}, level: ${jsonArray[jsonArray.length-1].level_zoom}: insert ${jsonArray.length} records success on ${table}`);
             rl.prompt();
         });      
     });
@@ -54,14 +66,14 @@ exports.query = function(query, callback){
 
 function randomStringVal(callback) {
     callback(randomString.generate({
-        length: '8',
+        length: '12',
         charset: 'numeric'
     }));
 }
 
 exports.randomStringVal = function (callback) {
     callback(randomString.generate({
-        length: '8',
+        length: '12',
         charset: 'numeric'
     }));
 }
